@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord Assurance Auto</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- SheetJS pour lire Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            background: linear-gradient(135deg, #0066cc, #004080);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+            border: none;
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .card-header {
+            background-color: #0066cc;
+            color: white;
+            font-weight: 600;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1rem 1.5rem;
+        }
+        .table th {
+            background-color: #0066cc;
+            color: white;
+            position: sticky;
+            top: 0;
+            font-weight: 600;
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        .footer {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            border-top: 5px solid #0066cc;
+        }
+        .upload-area {
+            border: 3px dashed #0066cc;
+            border-radius: 15px;
+            padding: 3rem;
+            text-align: center;
+            background-color: #f0f8ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 1rem 0;
+        }
+        .upload-area:hover {
+            background-color: #e6f2ff;
+            border-color: #004080;
+            transform: translateY(-2px);
+        }
+        .upload-area.dragover {
+            background-color: #d9edf7;
+            border-color: #28a745;
+        }
+        .upload-icon {
+            font-size: 4rem;
+            color: #0066cc;
+            margin-bottom: 1rem;
+        }
+        .empty-table {
+            text-align: center;
+            padding: 4rem;
+            color: #6c757d;
+        }
+        .empty-table-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            color: #ced4da;
+        }
+        .badge-moto {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .badge-voiture {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .badge-camion {
+            background-color: #6c757d;
+            color: white;
+        }
+        .badge-standard {
+            background-color: #6c757d;
+            color: white;
+        }
+        .badge-premium {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .badge-vip {
+            background-color: #dc3545;
+            color: white;
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+        .data-summary {
+            background-color: #e9f7fe;
+            border-left: 4px solid #0066cc;
+            padding: 1.2rem;
+            border-radius: 0 8px 8px 0;
+            margin-top: 1rem;
+        }
+        .indicator-card {
+            text-align: center;
+            height: 100%;
+        }
+        .indicator-card .card-body {
+            padding: 1.5rem;
+        }
+        .indicator-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+        .indicator-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .nav-tabs .nav-link {
+            font-weight: 600;
+        }
+        .tab-content {
+            padding: 1.5rem 0;
+        }
+        .sticky-top {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            background: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .summary-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .summary-item h6 {
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        .summary-item p {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0066cc;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- En-tête -->
+    <div class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-10">
+                    <h1><i class="bi bi-shield-check"></i> Tableau de Bord Assurance Auto</h1>
+                    <p class="lead mb-0">Agence Assurance Auto Ouarzazate - Suivi des contrats et analyse des données</p>
+                    
+                </div>
+                <div class="col-md-2 text-end">
+                    <div class="bg-white text-primary rounded p-2 d-inline-block">
+                        <i class="bi bi-calendar-check"></i> <span id="currentDate"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Section Import Excel -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-excel"></i> Importation du Fichier Excel</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="bi bi-cloud-arrow-up-fill"></i>
+                            </div>
+                            <h4>Importez votre fichier Excel</h4>
+                            <p class="text-muted">Glissez-déposez ou cliquez pour sélectionner</p>
+                            <p class="text-muted mb-3"><strong>Format accepté :</strong> .xlsx, .xls</p>
+                            <button id="importBtn" class="btn btn-primary btn-lg">
+                                <i class="bi bi-upload"></i> Sélectionner un fichier
+                            </button>
+                            <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+                        </div>
+                        
+                        <div class="loading-spinner" id="loadingSpinner">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                            <p class="mt-3 fs-5">Importation des données en cours...</p>
+                            <div class="progress mt-2" style="height: 8px;">
+                                <div id="importProgress" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div id="fileInfo" class="mt-3" style="display: none;">
+                            <div class="alert alert-success">
+                                <h5><i class="bi bi-check-circle-fill"></i> Fichier importé avec succès</h5>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <p><strong><i class="bi bi-file-earmark"></i> Fichier :</strong></p>
+                                        <p class="fs-6" id="fileName"></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong><i class="bi bi-calendar"></i> Date d'import :</strong></p>
+                                        <p class="fs-6" id="importDate"></p>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <p><strong><i class="bi bi-file-text"></i> Contrats :</strong></p>
+                                        <p class="fs-6"><span id="rowCount" class="badge bg-primary fs-6"></span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong><i class="bi bi-database"></i> Taille :</strong></p>
+                                        <p class="fs-6" id="fileSize"></p>
+                                    </div>
+                                </div>
+                                <button id="clearDataBtn" class="btn btn-outline-danger btn-sm mt-3">
+                                    <i class="bi bi-trash"></i> Effacer les données
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="errorMessage" class="alert alert-danger mt-3" style="display: none;">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <span id="errorText"></span>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6><i class="bi bi-info-circle"></i> Instructions</h6>
+                            <ul class="text-muted small">
+                                <li>Utilisez le fichier <strong>Assurances_Auto_Donnees.xlsx</strong></li>
+                                <li>Les données seront automatiquement analysées</li>
+                                <li>Les calculs (risque, prime totale, statut) seront effectués</li>
+                                <li>Cliquez sur "Données de démo" pour tester sans fichier</li>
+                            </ul>
+                            <button id="demoBtn" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-play-circle"></i> Charger des données de démonstration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau de Bord (initialement caché) -->
+        <div id="dashboardContent" style="display: none;">
+            <!-- Onglets de navigation -->
+            <div class="sticky-top">
+                <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                            <i class="bi bi-speedometer2"></i> Vue d'ensemble
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="contracts-tab" data-bs-toggle="tab" data-bs-target="#contracts" type="button" role="tab">
+                            <i class="bi bi-table"></i> Contrats
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">
+                            <i class="bi bi-bar-chart"></i> Analyses
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab">
+                            <i class="bi bi-file-earmark-text"></i> Rapports
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Contenu des onglets -->
+            <div class="tab-content" id="dashboardTabsContent">
+                <!-- Onglet 1: Vue d'ensemble -->
+                <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                    <!-- Indicateurs Principaux -->
+                    <div class="row mb-4" id="indicatorsSection">
+                        <div class="col-md-3">
+                            <div class="card indicator-card">
+                                <div class="card-header bg-primary">
+                                    <i class="bi bi-people-fill"></i> Clients
+                                </div>
+                                <div class="card-body">
+                                    <div class="indicator-value" id="totalClients">0</div>
+                                    <div class="indicator-label">Nombre total de clients</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card indicator-card">
+                                <div class="card-header bg-success">
+                                    <i class="bi bi-cash-stack"></i> Prime Totale
+                                </div>
+                                <div class="card-body">
+                                    <div class="indicator-value" id="totalPrime">0 MAD</div>
+                                    <div class="indicator-label">Valeur totale des primes</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card indicator-card">
+                                <div class="card-header bg-info">
+                                    <i class="bi bi-car-front-fill"></i> Valeur Véhicules
+                                </div>
+                                <div class="card-body">
+                                    <div class="indicator-value" id="totalValue">0 MAD</div>
+                                    <div class="indicator-label">Valeur totale assurée</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card indicator-card">
+                                <div class="card-header bg-warning">
+                                    <i class="bi bi-graph-up"></i> Prime Moyenne
+                                </div>
+                                <div class="card-body">
+                                    <div class="indicator-value" id="averagePrime">0 MAD</div>
+                                    <div class="indicator-label">Prime moyenne par contrat</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Résumé des données -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-pie-chart-fill"></i> Répartition par Type d'Assurance
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="insuranceChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-car-front"></i> Répartition par Type de Véhicule
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="vehicleChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistiques Rapides -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="bi bi-clipboard-data"></i> Statistiques Rapides
+                        </div>
+                        <div class="card-body">
+                            <div class="summary-grid">
+                                <div class="summary-item">
+                                    <h6><i class="bi bi-shield-check"></i> Contrats Tous Risques</h6>
+                                    <p id="tousRisquesCount">0</p>
+                                </div>
+                                <div class="summary-item">
+                                    <h6><i class="bi bi-star-fill"></i> Clients VIP</h6>
+                                    <p id="vipClientsCount">0</p>
+                                </div>
+                                <div class="summary-item">
+                                    <h6><i class="bi bi-geo-alt-fill"></i> Ville Principale</h6>
+                                    <p id="mainCity">-</p>
+                                </div>
+                                <div class="summary-item">
+                                    <h6><i class="bi bi-truck"></i> Nombre de Camions</h6>
+                                    <p id="camionsCount">0</p>
+                                </div>
+                                <div class="summary-item">
+                                    <h6><i class="bi bi-currency-exchange"></i> Prime la plus élevée</h6>
+                                    <p id="maxPrime">0 MAD</p>
+                                </div>
+                                <div class="summary-item">
+                                    <h6><i class="bi bi-calendar-month"></i> Dernier contrat</h6>
+                                    <p id="lastContractDate">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onglet 2: Contrats -->
+                <div class="tab-pane fade" id="contracts" role="tabpanel">
+                    <!-- Filtres -->
+                    <div class="card mb-4" id="filtersSection">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-funnel-fill"></i> Filtres de Recherche</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="filterCity" class="form-label"><i class="bi bi-geo-alt"></i> Ville</label>
+                                    <select id="filterCity" class="form-select">
+                                        <option value="">Toutes les villes</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="filterInsurance" class="form-label"><i class="bi bi-shield-check"></i> Type d'assurance</label>
+                                    <select id="filterInsurance" class="form-select">
+                                        <option value="">Tous les types</option>
+                                        <option value="Tiers">Tiers</option>
+                                        <option value="Tiers+">Tiers+</option>
+                                        <option value="Tous Risques">Tous Risques</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="filterVehicle" class="form-label"><i class="bi bi-truck"></i> Type de véhicule</label>
+                                    <select id="filterVehicle" class="form-select">
+                                        <option value="">Tous les types</option>
+                                        <option value="Moto">Moto</option>
+                                        <option value="Voiture">Voiture</option>
+                                        <option value="Camion">Camion</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="filterStatus" class="form-label"><i class="bi bi-person-badge"></i> Statut client</label>
+                                    <select id="filterStatus" class="form-select">
+                                        <option value="">Tous les statuts</option>
+                                        <option value="Standard">Standard</option>
+                                        <option value="Premium">Premium</option>
+                                        <option value="VIP">VIP</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-8">
+                                    <div class="data-summary">
+                                        <p class="mb-1" id="filterSummary"><strong><i class="bi bi-filter"></i> Filtres actifs :</strong> Aucun filtre appliqué</p>
+                                        <p class="mb-0" id="resultsCount"><strong><i class="bi bi-search"></i> Résultats :</strong> 0 contrat(s) trouvé(s)</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button id="applyFilters" class="btn btn-primary">
+                                        <i class="bi bi-funnel-fill"></i> Appliquer les filtres
+                                    </button>
+                                    <button id="resetFilters" class="btn btn-secondary">
+                                        <i class="bi bi-arrow-clockwise"></i> Réinitialiser
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tableau des Contrats -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-table"></i> Liste des Contrats</h5>
+                            <div>
+                                <button id="exportBtn" class="btn btn-sm btn-success">
+                                    <i class="bi bi-download"></i> Exporter CSV
+                                </button>
+                                <button id="printBtn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-printer"></i> Imprimer
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="table table-striped table-hover table-sm" id="contractsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nom & Prénom</th>
+                                            <th>CIN</th>
+                                            <th>Ville</th>
+                                            <th>Véhicule</th>
+                                            <th>Marque</th>
+                                            <th>Année</th>
+                                            <th>Valeur</th>
+                                            <th>Assurance</th>
+                                            <th>Prime Base</th>
+                                            <th>Prime Totale</th>
+                                            <th>Statut</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="contractsBody">
+                                        <!-- Données dynamiques -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3 text-center" id="paginationControls">
+                                <!-- Contrôles de pagination -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onglet 3: Analyses -->
+                <div class="tab-pane fade" id="analytics" role="tabpanel">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="bi bi-bar-chart-fill"></i> Primes par Ville
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="cityChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="bi bi-pie-chart-fill"></i> Répartition par Statut Client
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="statusChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-calendar-week"></i> Évolution Mensuelle des Primes
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container" style="height: 400px;">
+                                        <canvas id="monthlyChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onglet 4: Rapports -->
+                <div class="tab-pane fade" id="reports" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="bi bi-trophy"></i> Top 5 Clients
+                                </div>
+                                <div class="card-body">
+                                    <div id="topClientsList" class="list-group">
+                                        <!-- Liste dynamique -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="bi bi-currency-exchange"></i> Synthèse Financière
+                                </div>
+                                <div class="card-body">
+                                    <div id="financialSummary">
+                                        <!-- Synthèse dynamique -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-file-earmark-text"></i> Rapport Complet
+                                </div>
+                                <div class="card-body">
+                                    <div id="fullReport">
+                                        <!-- Rapport dynamique -->
+                                    </div>
+                                    <button id="generateReportBtn" class="btn btn-primary mt-3">
+                                        <i class="bi bi-file-earmark-pdf"></i> Générer le Rapport PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message état vide -->
+        <div id="emptyState" class="text-center mt-5">
+            <div class="empty-table">
+                <div class="empty-table-icon">
+                    <i class="bi bi-database"></i>
+                </div>
+                <h3 class="mb-3">Aucune donnée disponible</h3>
+                <p class="text-muted mb-4">Importez un fichier Excel pour commencer l'analyse des contrats d'assurance</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button id="demoBtn2" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-play-circle"></i> Données de démonstration
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Variables globales
+        let allContracts = [];
+        let currentFilteredContracts = [];
+        let charts = {};
+        const contractsPerPage = 10;
+        let currentPage = 1;
+
+        // Initialiser la date actuelle
+        function initCurrentDate() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            $('#currentDate').text(now.toLocaleDateString('fr-FR', options));
+        }
+
+        // Fonction pour lire le fichier Excel
+        function handleFile(e) {
+            const fileInput = e.target;
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showError("Aucun fichier sélectionné");
+                return;
+            }
+
+            // Vérifier l'extension
+            const fileName = file.name.toLowerCase();
+            if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+                showError("Veuillez sélectionner un fichier Excel (.xlsx, .xls)");
+                return;
+            }
+
+            // Afficher le loader
+            showLoading(true);
+            hideError();
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Chercher la feuille 'Assurances_Auto'
+                    let worksheet;
+                    let sheetName;
+                    
+                    if (workbook.SheetNames.includes('Assurances_Auto')) {
+                        sheetName = 'Assurances_Auto';
+                    } else if (workbook.SheetNames.includes('bak-end')) {
+                        sheetName = 'bak-end';
+                    } else {
+                        sheetName = workbook.SheetNames[0];
+                    }
+                    
+                    worksheet = workbook.Sheets[sheetName];
+                    
+                    // Convertir en JSON
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: false });
+                    
+                    if (jsonData.length === 0) {
+                        showError("Le fichier Excel est vide");
+                        showLoading(false);
+                        return;
+                    }
+                    
+                    // Traiter les données
+                    processExcelData(jsonData, file.name, file.size);
+                    
+                } catch (error) {
+                    console.error("Erreur lors de la lecture:", error);
+                    showError("Erreur lors de la lecture du fichier");
+                    showLoading(false);
+                }
+            };
+            
+            reader.onerror = function() {
+                showError("Erreur lors de la lecture du fichier");
+                showLoading(false);
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Traiter les données Excel
+        function processExcelData(jsonData, fileName, fileSize) {
+            try {
+                allContracts = [];
+                let processedCount = 0;
+                
+                // Simuler une progression
+                const totalRows = jsonData.length;
+                const progressInterval = setInterval(() => {
+                    processedCount++;
+                    const progress = Math.min((processedCount / totalRows) * 100, 90);
+                    $('#importProgress').css('width', progress + '%');
+                }, 30);
+                
+                jsonData.forEach((row, index) => {
+                    // Vérifier si c'est une ligne de données
+                    if (!row.ID_Client && !row['ID Client'] && index > 0) {
+                        if (row.Nom && row.Prénom) {
+                            row.ID_Client = index;
+                        } else {
+                            return;
+                        }
+                    }
+                    
+                    if (index === 0 && !row.ID_Client) {
+                        return; // Ignorer l'en-tête
+                    }
+                    
+                    // Extraire les données avec différentes possibilités de noms de colonnes
+                    const idClient = row.ID_Client || row['ID Client'] || row.ID || (index + 1);
+                    const nom = row.Nom || row['Nom Client'] || '';
+                    const prenom = row.Prénom || row['Prénom Client'] || '';
+                    const cin = row.CIN || row['N° CIN'] || '';
+                    const ville = row.Ville || row['Ville Client'] || '';
+                    const typeVehicule = row.Type_Vehicule || row['Type Véhicule'] || row.Type || '';
+                    const marque = row.Marque || '';
+                    const anneeVehicule = parseInt(row.Année_Vehicule || row.Année || row['Année de fabrication'] || '0');
+                    const valeurVehicule = parseFloat(row.Valeur_Vehicule || row.Valeur || row['Valeur du véhicule'] || 0);
+                    const typeAssurance = row.Type_Assurance || row['Type Assurance'] || row.Assurance || '';
+                    let primeBase = parseFloat(row.Prime_Base || row['Prime de base'] || row.Prime || 0);
+                    
+                    // Si primeBase n'est pas dans les données, calculer une base
+                    if (primeBase === 0) {
+                        primeBase = valeurVehicule * 0.015; // 1.5% de la valeur
+                    }
+                    
+                    // Formater la date
+                    const dateSouscription = formatDate(row.Date_Souscription || row.Date || row['Date de souscription'] || new Date());
+                    
+                    // Calculer le taux de risque
+                    let tauxRisque = 0.03; // Par défaut
+                    if (typeVehicule) {
+                        const typeLower = typeVehicule.toString().toLowerCase();
+                        if (typeLower.includes('moto')) tauxRisque = 0.05;
+                        else if (typeLower.includes('camion')) tauxRisque = 0.06;
+                        else if (typeLower.includes('voiture') || typeLower.includes('voit')) tauxRisque = 0.03;
+                    }
+                    
+                    // Calculer le montant de risque et la prime totale
+                    const montantRisque = valeurVehicule * tauxRisque;
+                    const primeTotale = primeBase + montantRisque;
+                    
+                    // Déterminer le statut client
+                    let statutClient = 'Standard';
+                    if (primeTotale >= 5000) statutClient = 'VIP';
+                    else if (primeTotale >= 2000) statutClient = 'Premium';
+                    
+                    // Ajouter le contrat
+                    allContracts.push({
+                        id: idClient,
+                        nom: nom,
+                        prenom: prenom,
+                        cin: cin,
+                        ville: ville,
+                        typeVehicule: typeVehicule,
+                        marque: marque,
+                        annee: anneeVehicule,
+                        valeur: valeurVehicule,
+                        typeAssurance: typeAssurance,
+                        primeBase: primeBase,
+                        tauxRisque: tauxRisque,
+                        montantRisque: montantRisque,
+                        primeTotale: primeTotale,
+                        statutClient: statutClient,
+                        date: dateSouscription
+                    });
+                });
+                
+                clearInterval(progressInterval);
+                $('#importProgress').css('width', '100%');
+                
+                if (allContracts.length === 0) {
+                    showError("Aucune donnée valide trouvée dans le fichier");
+                    showLoading(false);
+                    return;
+                }
+                
+                // Afficher les informations
+                showFileInfo(fileName, allContracts.length, fileSize);
+                
+                // Initialiser le dashboard
+                setTimeout(() => {
+                    initializeDashboard();
+                    showLoading(false);
+                }, 500);
+                
+            } catch (error) {
+                console.error("Erreur lors du traitement:", error);
+                showError("Erreur lors du traitement des données: " + error.message);
+                showLoading(false);
+            }
+        }
+
+        // Formater une date
+        function formatDate(dateValue) {
+            if (!dateValue) return '';
+            
+            try {
+                let date;
+                
+                if (typeof dateValue === 'string') {
+                    // Essayer différents formats de date
+                    const formats = [
+                        'YYYY-MM-DD',
+                        'DD/MM/YYYY',
+                        'MM/DD/YYYY',
+                        'YYYY/MM/DD'
+                    ];
+                    
+                    for (let format of formats) {
+                        const parts = dateValue.split(/[-\/]/);
+                        if (parts.length === 3) {
+                            let year, month, day;
+                            
+                            if (format === 'YYYY-MM-DD') {
+                                year = parseInt(parts[0]);
+                                month = parseInt(parts[1]) - 1;
+                                day = parseInt(parts[2]);
+                            } else if (format === 'DD/MM/YYYY') {
+                                day = parseInt(parts[0]);
+                                month = parseInt(parts[1]) - 1;
+                                year = parseInt(parts[2]);
+                            } else if (format === 'MM/DD/YYYY') {
+                                month = parseInt(parts[0]) - 1;
+                                day = parseInt(parts[1]);
+                                year = parseInt(parts[2]);
+                            } else if (format === 'YYYY/MM/DD') {
+                                year = parseInt(parts[0]);
+                                month = parseInt(parts[1]) - 1;
+                                day = parseInt(parts[2]);
+                            }
+                            
+                            if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                                date = new Date(year, month, day);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Si aucun format ne fonctionne, essayer de parser directement
+                    if (!date) {
+                        date = new Date(dateValue);
+                    }
+                } else if (typeof dateValue === 'number') {
+                    // Date Excel (nombre de jours depuis 1900)
+                    date = new Date(Math.round((dateValue - 25569) * 86400 * 1000));
+                } else if (dateValue instanceof Date) {
+                    date = dateValue;
+                }
+                
+                if (date && !isNaN(date.getTime())) {
+                    return date.toLocaleDateString('fr-FR');
+                }
+            } catch (e) {
+                console.warn("Erreur de formatage de date:", e);
+            }
+            
+            return dateValue.toString();
+        }
+
+        // Initialiser le dashboard
+        function initializeDashboard() {
+            // Cacher l'état vide
+            $('#emptyState').hide();
+            
+            // Afficher le dashboard
+            $('#dashboardContent').show();
+            
+            // Initialiser les données
+            currentFilteredContracts = [...allContracts];
+            
+            // Mettre à jour les indicateurs
+            updateIndicators();
+            
+            // Initialiser les filtres
+            populateFilters();
+            
+            // Afficher les contrats
+            displayContracts(currentPage);
+            
+            // Initialiser les graphiques
+            initCharts();
+            
+            // Mettre à jour le résumé des filtres
+            updateFilterSummary();
+            
+            // Générer les rapports
+            generateReports();
+        }
+
+        // Mettre à jour les indicateurs
+        function updateIndicators() {
+            const totalContracts = allContracts.length;
+            const totalPrime = allContracts.reduce((sum, c) => sum + c.primeTotale, 0);
+            const averagePrime = totalContracts > 0 ? totalPrime / totalContracts : 0;
+            const totalValue = allContracts.reduce((sum, c) => sum + c.valeur, 0);
+            
+            $('#totalClients').text(totalContracts.toLocaleString('fr-FR'));
+            $('#totalPrime').text(totalPrime.toLocaleString('fr-FR') + ' MAD');
+            $('#totalValue').text(totalValue.toLocaleString('fr-FR') + ' MAD');
+            $('#averagePrime').text(Math.round(averagePrime).toLocaleString('fr-FR') + ' MAD');
+            
+            // Statistiques rapides
+            const tousRisquesCount = allContracts.filter(c => 
+                c.typeAssurance && c.typeAssurance.toString().toLowerCase().includes('tous risques')
+            ).length;
+            
+            const vipClientsCount = allContracts.filter(c => c.statutClient === 'VIP').length;
+            
+            // Ville la plus fréquente
+            const cityCounts = {};
+            allContracts.forEach(c => {
+                if (c.ville) {
+                    cityCounts[c.ville] = (cityCounts[c.ville] || 0) + 1;
+                }
+            });
+            const mainCity = Object.keys(cityCounts).reduce((a, b) => 
+                cityCounts[a] > cityCounts[b] ? a : b, '');
+            
+            const camionsCount = allContracts.filter(c => 
+                c.typeVehicule && c.typeVehicule.toString().toLowerCase().includes('camion')
+            ).length;
+            
+            const maxPrime = allContracts.reduce((max, c) => 
+                c.primeTotale > max ? c.primeTotale : max, 0);
+            
+            // Trouver la date la plus récente
+            const dates = allContracts.map(c => {
+                try {
+                    return new Date(c.date.split('/').reverse().join('-'));
+                } catch {
+                    return new Date(0);
+                }
+            });
+            const lastDate = dates.length > 0 ? 
+                new Date(Math.max(...dates.map(d => d.getTime()))) : 
+                new Date();
+            
+            $('#tousRisquesCount').text(tousRisquesCount);
+            $('#vipClientsCount').text(vipClientsCount);
+            $('#mainCity').text(mainCity || '-');
+            $('#camionsCount').text(camionsCount);
+            $('#maxPrime').text(maxPrime.toLocaleString('fr-FR') + ' MAD');
+            $('#lastContractDate').text(lastDate.toLocaleDateString('fr-FR'));
+        }
+
+        // Peupler les filtres
+        function populateFilters() {
+            // Villes
+            const citySelect = $('#filterCity');
+            citySelect.empty();
+            citySelect.append('<option value="">Toutes les villes</option>');
+            
+            const cities = [...new Set(allContracts.map(c => c.ville).filter(v => v && v.trim() !== ''))].sort();
+            cities.forEach(city => {
+                citySelect.append(`<option value="${city}">${city}</option>`);
+            });
+            
+            // Statuts (déjà défini dans HTML)
+        }
+
+        // Afficher les contrats avec pagination
+        function displayContracts(page) {
+            const tbody = $('#contractsBody');
+            tbody.empty();
+            
+            const startIndex = (page - 1) * contractsPerPage;
+            const endIndex = Math.min(startIndex + contractsPerPage, currentFilteredContracts.length);
+            const pageContracts = currentFilteredContracts.slice(startIndex, endIndex);
+            
+            if (pageContracts.length === 0) {
+                const row = `
+                    <tr>
+                        <td colspan="13" class="text-center text-muted py-4">
+                            <i class="bi bi-search display-6"></i>
+                            <p class="mt-2">Aucun contrat trouvé</p>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            } else {
+                pageContracts.forEach(contract => {
+                    const badgeClass = getVehicleBadgeClass(contract.typeVehicule);
+                    const assuranceBadgeClass = getInsuranceBadgeClass(contract.typeAssurance);
+                    const statutBadgeClass = getStatusBadgeClass(contract.statutClient);
+                    
+                    const row = `
+                        <tr>
+                            <td><strong>${contract.id}</strong></td>
+                            <td>${contract.nom} ${contract.prenom}</td>
+                            <td><code>${contract.cin}</code></td>
+                            <td>${contract.ville}</td>
+                            <td><span class="badge ${badgeClass}">${contract.typeVehicule}</span></td>
+                            <td>${contract.marque}</td>
+                            <td>${contract.annee}</td>
+                            <td class="text-end">${contract.valeur.toLocaleString('fr-FR')} MAD</td>
+                            <td><span class="badge ${assuranceBadgeClass}">${contract.typeAssurance}</span></td>
+                            <td class="text-end">${contract.primeBase.toLocaleString('fr-FR')} MAD</td>
+                            <td class="text-end"><strong>${contract.primeTotale.toLocaleString('fr-FR')} MAD</strong></td>
+                            <td><span class="badge ${statutBadgeClass}">${contract.statutClient}</span></td>
+                            <td>${contract.date}</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            }
+            
+            // Mettre à jour la pagination
+            updatePagination();
+        }
+
+        // Mettre à jour la pagination
+        function updatePagination() {
+            const totalPages = Math.ceil(currentFilteredContracts.length / contractsPerPage);
+            const paginationDiv = $('#paginationControls');
+            paginationDiv.empty();
+            
+            if (totalPages > 1) {
+                let paginationHtml = `
+                    <nav aria-label="Navigation des contrats">
+                        <ul class="pagination justify-content-center">
+                `;
+                
+                // Bouton précédent
+                paginationHtml += `
+                    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${currentPage - 1}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                `;
+                
+                // Pages
+                for (let i = 1; i <= totalPages; i++) {
+                    if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                        paginationHtml += `
+                            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                                <a class="page-link" href="#" data-page="${i}">${i}</a>
+                            </li>
+                        `;
+                    } else if (i === currentPage - 2 || i === currentPage + 2) {
+                        paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    }
+                }
+                
+                // Bouton suivant
+                paginationHtml += `
+                    <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${currentPage + 1}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                `;
+                
+                paginationHtml += `
+                        </ul>
+                    </nav>
+                    <p class="text-muted mt-2 small">
+                        Page ${currentPage} sur ${totalPages} - 
+                        ${currentFilteredContracts.length} contrat(s) au total
+                    </p>
+                `;
+                
+                paginationDiv.html(paginationHtml);
+                
+                // Ajouter les événements de pagination
+                $('.page-link[data-page]').click(function(e) {
+                    e.preventDefault();
+                    const page = parseInt($(this).data('page'));
+                    if (page >= 1 && page <= totalPages) {
+                        currentPage = page;
+                        displayContracts(currentPage);
+                    }
+                });
+            }
+        }
+
+        // Classes pour les badges
+        function getVehicleBadgeClass(typeVehicule) {
+            if (!typeVehicule) return 'bg-secondary';
+            const type = typeVehicule.toString().toLowerCase();
+            if (type.includes('moto')) return 'badge-moto';
+            if (type.includes('voiture') || type.includes('voit')) return 'badge-voiture';
+            if (type.includes('camion')) return 'badge-camion';
+            return 'bg-secondary';
+        }
+
+        function getInsuranceBadgeClass(typeAssurance) {
+            if (!typeAssurance) return 'bg-secondary';
+            const type = typeAssurance.toString().toLowerCase();
+            if (type.includes('tous risques')) return 'bg-danger';
+            if (type.includes('tiers+')) return 'bg-primary';
+            if (type.includes('tiers')) return 'bg-success';
+            return 'bg-secondary';
+        }
+
+        function getStatusBadgeClass(statutClient) {
+            if (!statutClient) return 'bg-secondary';
+            if (statutClient === 'VIP') return 'badge-vip';
+            if (statutClient === 'Premium') return 'badge-premium';
+            if (statutClient === 'Standard') return 'badge-standard';
+            return 'bg-secondary';
+        }
+
+        // Initialiser les graphiques
+        function initCharts() {
+            // Détruire les graphiques existants
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            charts = {};
+            
+            // 1. Graphique des assurances
+            const ctx1 = document.getElementById('insuranceChart').getContext('2d');
+            const insuranceData = getInsuranceDistribution();
+            charts.insurance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: insuranceData.labels,
+                    datasets: [{
+                        data: insuranceData.values,
+                        backgroundColor: ['#28a745', '#007bff', '#dc3545'],
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 2. Graphique des véhicules
+            const ctx2 = document.getElementById('vehicleChart').getContext('2d');
+            const vehicleData = getVehicleDistribution();
+            charts.vehicle = new Chart(ctx2, {
+                type: 'pie',
+                data: {
+                    labels: vehicleData.labels,
+                    datasets: [{
+                        data: vehicleData.values,
+                        backgroundColor: ['#ffc107', '#17a2b8', '#6c757d'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 3. Graphique par ville
+            const ctx3 = document.getElementById('cityChart').getContext('2d');
+            const cityData = getCityDistribution();
+            charts.city = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: cityData.labels,
+                    datasets: [{
+                        label: 'Nombre de contrats',
+                        data: cityData.values,
+                        backgroundColor: '#0066cc',
+                        borderColor: '#004080',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 4. Graphique par statut
+            const ctx4 = document.getElementById('statusChart').getContext('2d');
+            const statusData = getStatusDistribution();
+            charts.status = new Chart(ctx4, {
+                type: 'polarArea',
+                data: {
+                    labels: statusData.labels,
+                    datasets: [{
+                        data: statusData.values,
+                        backgroundColor: ['#6c757d', '#ffc107', '#dc3545'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            // 5. Graphique mensuel
+            const ctx5 = document.getElementById('monthlyChart').getContext('2d');
+            const monthlyData = getMonthlyDistribution();
+            charts.monthly = new Chart(ctx5, {
+                type: 'line',
+                data: {
+                    labels: monthlyData.labels,
+                    datasets: [{
+                        label: 'Prime totale (MAD)',
+                        data: monthlyData.values,
+                        borderColor: '#0066cc',
+                        backgroundColor: 'rgba(0, 102, 204, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString('fr-FR') + ' MAD';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Fonctions pour obtenir les distributions de données
+        function getInsuranceDistribution() {
+            const counts = {
+                'Tiers': 0,
+                'Tiers+': 0,
+                'Tous Risques': 0
+            };
+            
+            allContracts.forEach(contract => {
+                const type = contract.typeAssurance || '';
+                if (type.includes('Tous Risques')) counts['Tous Risques']++;
+                else if (type.includes('Tiers+')) counts['Tiers+']++;
+                else if (type.includes('Tiers')) counts['Tiers']++;
+            });
+            
+            return {
+                labels: Object.keys(counts),
+                values: Object.values(counts)
+            };
+        }
+
+        function getVehicleDistribution() {
+            const counts = {
+                'Moto': 0,
+                'Voiture': 0,
+                'Camion': 0
+            };
+            
+            allContracts.forEach(contract => {
+                const type = (contract.typeVehicule || '').toString().toLowerCase();
+                if (type.includes('moto')) counts['Moto']++;
+                else if (type.includes('voiture') || type.includes('voit')) counts['Voiture']++;
+                else if (type.includes('camion')) counts['Camion']++;
+            });
+            
+            return {
+                labels: Object.keys(counts),
+                values: Object.values(counts)
+            };
+        }
+
+        function getCityDistribution() {
+            const cityCounts = {};
+            allContracts.forEach(contract => {
+                if (contract.ville) {
+                    cityCounts[contract.ville] = (cityCounts[contract.ville] || 0) + 1;
+                }
+            });
+            
+            // Trier par nombre décroissant
+            const sortedCities = Object.entries(cityCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10); // Top 10 villes
+            
+            return {
+                labels: sortedCities.map(c => c[0]),
+                values: sortedCities.map(c => c[1])
+            };
+        }
+
+        function getStatusDistribution() {
+            const counts = {
+                'Standard': 0,
+                'Premium': 0,
+                'VIP': 0
+            };
+            
+            allContracts.forEach(contract => {
+                counts[contract.statutClient] = (counts[contract.statutClient] || 0) + 1;
+            });
+            
+            return {
+                labels: Object.keys(counts),
+                values: Object.values(counts)
+            };
+        }
+
+        function getMonthlyDistribution() {
+            const monthlyTotals = {};
+            
+            allContracts.forEach(contract => {
+                try {
+                    const date = new Date(contract.date.split('/').reverse().join('-'));
+                    const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`;
+                    monthlyTotals[monthYear] = (monthlyTotals[monthYear] || 0) + contract.primeTotale;
+                } catch {
+                    // Ignorer les dates invalides
+                }
+            });
+            
+            // Trier par date
+            const sortedMonths = Object.entries(monthlyTotals)
+                .sort((a, b) => {
+                    const [monthA, yearA] = a[0].split('/').map(Number);
+                    const [monthB, yearB] = b[0].split('/').map(Number);
+                    return yearA - yearB || monthA - monthB;
+                });
+            
+            return {
+                labels: sortedMonths.map(m => m[0]),
+                values: sortedMonths.map(m => m[1])
+            };
+        }
+
+        // Filtrer les contrats
+        function filterContracts() {
+            const cityFilter = $('#filterCity').val();
+            const insuranceFilter = $('#filterInsurance').val();
+            const vehicleFilter = $('#filterVehicle').val();
+            const statusFilter = $('#filterStatus').val();
+            
+            let filtered = allContracts;
+            
+            if (cityFilter) {
+                filtered = filtered.filter(c => c.ville === cityFilter);
+            }
+            
+            if (insuranceFilter) {
+                filtered = filtered.filter(c => {
+                    const type = (c.typeAssurance || '').toString().toLowerCase();
+                    if (insuranceFilter === 'Tiers') {
+                        return type.includes('tiers') && !type.includes('tous') && !type.includes('tiers+');
+                    } else if (insuranceFilter === 'Tiers+') {
+                        return type.includes('tiers+');
+                    } else if (insuranceFilter === 'Tous Risques') {
+                        return type.includes('tous risques');
+                    }
+                    return true;
+                });
+            }
+            
+            if (vehicleFilter) {
+                filtered = filtered.filter(c => {
+                    const type = (c.typeVehicule || '').toString().toLowerCase();
+                    if (vehicleFilter === 'Moto') return type.includes('moto');
+                    if (vehicleFilter === 'Voiture') return type.includes('voiture') || type.includes('voit');
+                    if (vehicleFilter === 'Camion') return type.includes('camion');
+                    return true;
+                });
+            }
+            
+            if (statusFilter) {
+                filtered = filtered.filter(c => c.statutClient === statusFilter);
+            }
+            
+            currentFilteredContracts = filtered;
+            currentPage = 1;
+            displayContracts(currentPage);
+            updateFilterSummary();
+            
+            // Mettre à jour les graphiques avec les données filtrées
+            updateChartsWithFilteredData();
+        }
+
+        // Mettre à jour les graphiques avec données filtrées
+        function updateChartsWithFilteredData() {
+            if (!charts.insurance || !charts.vehicle) return;
+            
+            const insuranceData = getInsuranceDistribution();
+            charts.insurance.data.datasets[0].data = insuranceData.values;
+            charts.insurance.update();
+            
+            const vehicleData = getVehicleDistribution();
+            charts.vehicle.data.datasets[0].data = vehicleData.values;
+            charts.vehicle.update();
+        }
+
+        // Mettre à jour le résumé des filtres
+        function updateFilterSummary() {
+            const cityFilter = $('#filterCity').val();
+            const insuranceFilter = $('#filterInsurance').val();
+            const vehicleFilter = $('#filterVehicle').val();
+            const statusFilter = $('#filterStatus').val();
+            
+            let summary = [];
+            if (cityFilter) summary.push(`Ville: ${cityFilter}`);
+            if (insuranceFilter) summary.push(`Assurance: ${insuranceFilter}`);
+            if (vehicleFilter) summary.push(`Véhicule: ${vehicleFilter}`);
+            if (statusFilter) summary.push(`Statut: ${statusFilter}`);
+            
+            const summaryText = summary.length > 0 ? summary.join(' • ') : 'Aucun filtre';
+            $('#filterSummary').html(`<strong><i class="bi bi-filter"></i> Filtres actifs :</strong> ${summaryText}`);
+            $('#resultsCount').html(`<strong><i class="bi bi-search"></i> Résultats :</strong> ${currentFilteredContracts.length} contrat(s) sur ${allContracts.length}`);
+        }
+
+        // Générer les rapports
+        function generateReports() {
+            // Top 5 clients
+            const topClients = [...allContracts]
+                .sort((a, b) => b.primeTotale - a.primeTotale)
+                .slice(0, 5);
+            
+            let topClientsHtml = '';
+            topClients.forEach((client, index) => {
+                topClientsHtml += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">${index + 1}. ${client.nom} ${client.prenom}</h6>
+                            <small class="text-muted">${client.ville} • ${client.typeVehicule}</small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">
+                            ${client.primeTotale.toLocaleString('fr-FR')} MAD
+                        </span>
+                    </div>
+                `;
+            });
+            $('#topClientsList').html(topClientsHtml);
+            
+            // Synthèse financière
+            const totalPrime = allContracts.reduce((sum, c) => sum + c.primeTotale, 0);
+            const totalValue = allContracts.reduce((sum, c) => sum + c.valeur, 0);
+            const averagePrime = totalPrime / allContracts.length;
+            
+            $('#financialSummary').html(`
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Chiffre d'affaires :</strong></p>
+                        <h3 class="text-success">${totalPrime.toLocaleString('fr-FR')} MAD</h3>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Valeur assurée totale :</strong></p>
+                        <h3 class="text-info">${totalValue.toLocaleString('fr-FR')} MAD</h3>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p><strong>Prime moyenne :</strong></p>
+                        <h4>${Math.round(averagePrime).toLocaleString('fr-FR')} MAD</h4>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Nombre de contrats :</strong></p>
+                        <h4>${allContracts.length}</h4>
+                    </div>
+                </div>
+            `);
+            
+            // Rapport complet
+            const reportDate = new Date().toLocaleDateString('fr-FR');
+            $('#fullReport').html(`
+                <h5>Rapport d'analyse des contrats d'assurance</h5>
+                <p><strong>Date du rapport :</strong> ${reportDate}</p>
+                <p><strong>Nombre total de contrats :</strong> ${allContracts.length}</p>
+                <p><strong>Période couverte :</strong> ${getDateRange()}</p>
+                
+                <h6 class="mt-3">Répartition par type d'assurance :</h6>
+                <ul>
+                    <li>Tiers : ${allContracts.filter(c => c.typeAssurance.includes('Tiers') && !c.typeAssurance.includes('Tiers+')).length} contrats</li>
+                    <li>Tiers+ : ${allContracts.filter(c => c.typeAssurance.includes('Tiers+')).length} contrats</li>
+                    <li>Tous Risques : ${allContracts.filter(c => c.typeAssurance.includes('Tous Risques')).length} contrats</li>
+                </ul>
+                
+                <h6 class="mt-3">Répartition par ville :</h6>
+                <p>${getCitySummary()}</p>
+                
+                <h6 class="mt-3">Performance financière :</h6>
+                <p>Prime totale : ${totalPrime.toLocaleString('fr-FR')} MAD</p>
+                <p>Valeur totale assurée : ${totalValue.toLocaleString('fr-FR')} MAD</p>
+                <p>Taux de couverture moyen : ${((totalPrime / totalValue) * 100).toFixed(2)}%</p>
+            `);
+        }
+
+        // Obtenir la plage de dates
+        function getDateRange() {
+            if (allContracts.length === 0) return '-';
+            
+            const dates = allContracts.map(c => {
+                try {
+                    return new Date(c.date.split('/').reverse().join('-'));
+                } catch {
+                    return null;
+                }
+            }).filter(d => d);
+            
+            if (dates.length === 0) return '-';
+            
+            const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+            const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+            
+            return `${minDate.toLocaleDateString('fr-FR')} au ${maxDate.toLocaleDateString('fr-FR')}`;
+        }
+
+        // Obtenir le résumé par ville
+        function getCitySummary() {
+            const cityCounts = {};
+            allContracts.forEach(c => {
+                if (c.ville) {
+                    cityCounts[c.ville] = (cityCounts[c.ville] || 0) + 1;
+                }
+            });
+            
+            const sortedCities = Object.entries(cityCounts)
+                .sort((a, b) => b[1] - a[1]);
+            
+            return sortedCities.map(([city, count]) => 
+                `${city}: ${count} contrat(s)`
+            ).join(', ');
+        }
+
+        // Afficher les informations du fichier
+        function showFileInfo(fileName, rowCount, fileSize) {
+            $('#fileName').text(fileName);
+            $('#rowCount').text(rowCount);
+            $('#importDate').text(new Date().toLocaleString('fr-FR'));
+            
+            // Formater la taille du fichier
+            let sizeText = '';
+            if (fileSize < 1024) {
+                sizeText = fileSize + ' octets';
+            } else if (fileSize < 1024 * 1024) {
+                sizeText = (fileSize / 1024).toFixed(1) + ' Ko';
+            } else {
+                sizeText = (fileSize / (1024 * 1024)).toFixed(1) + ' Mo';
+            }
+            $('#fileSize').text(sizeText);
+            
+            $('#fileInfo').show();
+        }
+
+        // Afficher le loader
+        function showLoading(show) {
+            if (show) {
+                $('#loadingSpinner').show();
+                $('#uploadArea').hide();
+            } else {
+                $('#loadingSpinner').hide();
+                $('#uploadArea').show();
+                $('#importProgress').css('width', '0%');
+            }
+        }
+
+        // Afficher une erreur
+        function showError(message) {
+            $('#errorText').text(message);
+            $('#errorMessage').show();
+            setTimeout(() => {
+                $('#errorMessage').hide();
+            }, 5000);
+        }
+
+        // Cacher les erreurs
+        function hideError() {
+            $('#errorMessage').hide();
+        }
+
+        // Réinitialiser l'interface
+        function resetInterface() {
+            if (allContracts.length === 0) return;
+            
+            if (confirm('Voulez-vous vraiment effacer toutes les données ?')) {
+                allContracts = [];
+                currentFilteredContracts = [];
+                
+                // Cacher le dashboard
+                $('#dashboardContent').hide();
+                $('#fileInfo').hide();
+                $('#errorMessage').hide();
+                
+                // Afficher l'état vide
+                $('#emptyState').show();
+                
+                // Réinitialiser les graphiques
+                Object.values(charts).forEach(chart => {
+                    if (chart) chart.destroy();
+                });
+                charts = {};
+                
+                // Réinitialiser le champ de fichier
+                $('#fileInput').val('');
+            }
+        }
+
+        // Charger des données de démonstration
+        function loadDemoData() {
+            showLoading(true);
+            hideError();
+            
+            // Données de démonstration basées sur le fichier fourni
+            const demoContracts = [];
+            const villes = ["Ouarzazate", "Marrakech", "Rabat", "Casablanca", "Agadir", "Fes"];
+            const typesAssurance = ["Tiers", "Tiers+", "Tous Risques"];
+            const typesVehicule = ["Moto", "Voiture", "Camion"];
+            const marques = ["Renault", "Toyota", "Hyundai", "Ford", "Peugeot", "Dacia"];
+            const noms = ["El Amrani", "Ait Lahcen", "Benali", "El Idrissi", "Chraibi", "Tahiri", "Bennani", "El Fassi"];
+            const prenoms = ["Youssef", "Fatima", "Ahmed", "Salma", "Mohamed", "Khadija", "Omar", "Imane"];
+            
+            // Créer 40 contrats de démonstration
+            for (let i = 1; i <= 40; i++) {
+                const ville = villes[Math.floor(Math.random() * villes.length)];
+                const typeVehicule = typesVehicule[Math.floor(Math.random() * typesVehicule.length)];
+                const typeAssurance = typesAssurance[Math.floor(Math.random() * typesAssurance.length)];
+                const valeur = 90000 + Math.floor(Math.random() * 120000);
+                const primeBase = 1500 + Math.floor(Math.random() * 2500);
+                
+                // Calculer le taux de risque
+                let tauxRisque = 0.03;
+                if (typeVehicule === "Moto") tauxRisque = 0.05;
+                else if (typeVehicule === "Camion") tauxRisque = 0.06;
+                
+                const montantRisque = valeur * tauxRisque;
+                const primeTotale = primeBase + montantRisque;
+                
+                // Déterminer le statut
+                let statutClient = "Standard";
+                if (primeTotale >= 5000) statutClient = "VIP";
+                else if (primeTotale >= 2000) statutClient = "Premium";
+                
+                // Générer une date aléatoire dans 2025
+                const day = Math.floor(Math.random() * 28) + 1;
+                const month = Math.floor(Math.random() * 12) + 1;
+                const date = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/2025`;
+                
+                demoContracts.push({
+                    id: i,
+                    nom: noms[Math.floor(Math.random() * noms.length)],
+                    prenom: prenoms[Math.floor(Math.random() * prenoms.length)],
+                    cin: `AB${String(i).padStart(5, '0')}`,
+                    ville: ville,
+                    typeVehicule: typeVehicule,
+                    marque: marques[Math.floor(Math.random() * marques.length)],
+                    annee: 2015 + Math.floor(Math.random() * 10),
+                    valeur: valeur,
+                    typeAssurance: typeAssurance,
+                    primeBase: primeBase,
+                    tauxRisque: tauxRisque,
+                    montantRisque: montantRisque,
+                    primeTotale: primeTotale,
+                    statutClient: statutClient,
+                    date: date
+                });
+            }
+            
+            // Simuler un traitement
+            setTimeout(() => {
+                allContracts = demoContracts;
+                showFileInfo("Données_de_démonstration.xlsx", allContracts.length, 10240);
+                $('#fileInfo .alert').addClass('alert-info').removeClass('alert-success');
+                $('#fileInfo h5').html('<i class="bi bi-info-circle-fill"></i> Données de démonstration');
+                
+                initializeDashboard();
+                showLoading(false);
+            }, 1500);
+        }
+
+        // Exporter en CSV
+        function exportToCSV() {
+            if (currentFilteredContracts.length === 0) {
+                alert("Aucune donnée à exporter");
+                return;
+            }
+            
+            const headers = ["ID", "Nom", "Prénom", "CIN", "Ville", "Type Véhicule", "Marque", "Année", "Valeur (MAD)", "Type Assurance", "Prime Base (MAD)", "Prime Totale (MAD)", "Statut", "Date"];
+            
+            const rows = currentFilteredContracts.map(contract => [
+                contract.id,
+                contract.nom,
+                contract.prenom,
+                contract.cin,
+                contract.ville,
+                contract.typeVehicule,
+                contract.marque,
+                contract.annee,
+                contract.valeur,
+                contract.typeAssurance,
+                contract.primeBase,
+                contract.primeTotale,
+                contract.statutClient,
+                contract.date
+            ]);
+            
+            const csvContent = [headers, ...rows]
+                .map(row => row.map(cell => `"${cell}"`).join(','))
+                .join('\n');
+            
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `contrats_assurance_${new Date().toISOString().slice(0,10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Initialiser les événements
+        $(document).ready(function() {
+            // Initialiser la date
+            initCurrentDate();
+            
+            // Événements d'import
+            $('#importBtn').click(function() {
+                $('#fileInput').click();
+            });
+            
+            $('#fileInput').change(handleFile);
+            
+            // Drag and drop
+            $('#uploadArea').on('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).addClass('dragover');
+            });
+            
+            $('#uploadArea').on('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+            });
+            
+            $('#uploadArea').on('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+                
+                const files = e.originalEvent.dataTransfer.files;
+                if (files.length > 0) {
+                    $('#fileInput')[0].files = files;
+                    handleFile({target: $('#fileInput')[0]});
+                }
+            });
+            
+            // Boutons de démonstration
+            $('#demoBtn, #demoBtn2').click(loadDemoData);
+            
+            // Effacer les données
+            $('#clearDataBtn').click(resetInterface);
+            
+            // Filtres
+            $('#applyFilters').click(function() {
+                filterContracts();
+            });
+            
+            $('#resetFilters').click(function() {
+                $('#filterCity').val('');
+                $('#filterInsurance').val('');
+                $('#filterVehicle').val('');
+                $('#filterStatus').val('');
+                
+                currentFilteredContracts = [...allContracts];
+                currentPage = 1;
+                displayContracts(currentPage);
+                updateFilterSummary();
+                
+                // Réinitialiser les graphiques
+                initCharts();
+            });
+            
+            // Export
+            $('#exportBtn').click(exportToCSV);
+            
+            // Impression
+            $('#printBtn').click(function() {
+                window.print();
+            });
+            
+            // Générer rapport PDF
+            $('#generateReportBtn').click(function() {
+                alert("Fonctionnalité PDF à implémenter - Pour l'examen, utilisez l'export CSV");
+            });
+            
+            // Initialiser les onglets Bootstrap
+            const tabEls = document.querySelectorAll('#dashboardTabs button[data-bs-toggle="tab"]');
+            tabEls.forEach(tabEl => {
+                tabEl.addEventListener('shown.bs.tab', function (event) {
+                    // Redimensionner les graphiques quand l'onglet change
+                    setTimeout(() => {
+                        Object.values(charts).forEach(chart => {
+                            if (chart) chart.resize();
+                        });
+                    }, 300);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
