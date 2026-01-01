@@ -1,12 +1,16 @@
 # 🚗 Tableau de Bord Assurance Auto
 
 Une application web interactive pour la gestion et l'analyse des contrats d'assurance automobile, développée dans le cadre d'un examen de fin de module.
-<img width="770" height="417" alt="image" src="https://github.com/user-attachments/assets/29eb0983-561b-4535-8789-b8804610f871" />
-<img width="518" height="433" alt="image" src="https://github.com/user-attachments/assets/d90d1a10-d2e9-44c3-8754-c4d596eeedc6" />
-<img width="491" height="386" alt="image" src="https://github.com/user-attachments/assets/d1f95c92-f43f-4736-b473-1ad99aecbcda" />
-<img width="505" height="397" alt="image" src="https://github.com/user-attachments/assets/398f97ac-1df6-4ce0-a654-b0bd63153b8c" />
-<img width="493" height="443" alt="image" src="https://github.com/user-attachments/assets/93cce010-4a9f-4fa7-9750-07f8de57d142" />
 
+<img width="770" height="417" alt="image" src="https://github.com/user-attachments/assets/29eb0983-561b-4535-8789-b8804610f871" />
+<br>
+<img width="518" height="433" alt="image" src="https://github.com/user-attachments/assets/d90d1a10-d2e9-44c3-8754-c4d596eeedc6" />
+<br>
+<img width="491" height="386" alt="image" src="https://github.com/user-attachments/assets/d1f95c92-f43f-4736-b473-1ad99aecbcda" />
+<br>
+<img width="505" height="397" alt="image" src="https://github.com/user-attachments/assets/398f97ac-1df6-4ce0-a654-b0bd63153b8c" />
+<br>
+<img width="493" height="443" alt="image" src="https://github.com/user-attachments/assets/93cce010-4a9f-4fa7-9750-07f8de57d142" />
 
 
 
